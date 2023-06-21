@@ -12,9 +12,22 @@ class ResourceController extends Controller
    *
    * @return \Illuminate\Http\Response
    */
-  public function index()
+  public function index(Request $request)
   {
-    return response()->json(Resource::all());
+    $tags = $request->get('tags');
+
+    if ($tags) {
+      $tagArray = explode(',', $tags);
+      $resources = Resource::where(function ($query) use ($tagArray) {
+        foreach ($tagArray as $tag) {
+          $query->orWhere('tags', 'like', '%' . trim($tag) . '%');
+        }
+      })->get();
+    } else {
+      $resources = Resource::all();
+    }
+
+    return response()->json($resources);
   }
 
   /**
