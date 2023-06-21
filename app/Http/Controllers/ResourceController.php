@@ -18,13 +18,14 @@ class ResourceController extends Controller
 
     if ($tags) {
       $tagArray = explode(',', $tags);
+
       $resources = Resource::where(function ($query) use ($tagArray) {
         foreach ($tagArray as $tag) {
           $query->orWhere('tags', 'like', '%' . trim($tag) . '%');
         }
-      })->get();
+      })->paginate(15);  // 15 is the number of items per page
     } else {
-      $resources = Resource::all();
+      $resources = Resource::paginate(15);  // 15 is the number of items per page
     }
 
     return response()->json($resources);
