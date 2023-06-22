@@ -28,6 +28,13 @@ class ResourceController extends Controller
       $resources = Resource::paginate(15);  // 15 is the number of items per page
     }
 
+    // Loop through each resource and encode the image to Base64
+    foreach ($resources as $resource) {
+      if ($resource->image) {
+        $resource->image = base64_encode($resource->image);
+      }
+    }
+
     return response()->json($resources);
   }
 
@@ -52,7 +59,14 @@ class ResourceController extends Controller
    */
   public function show($id)
   {
-    return response()->json(Resource::find($id));
+    $resource = Resource::find($id);
+
+    // Encoding image to Base64
+    if ($resource->image) {
+      $resource->image = base64_encode($resource->image);
+    }
+
+    return response()->json($resource);
   }
 
   /**
