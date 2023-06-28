@@ -4,97 +4,62 @@ namespace App\Http\Controllers;
 
 use App\Models\Resource;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class ResourceController extends Controller
 {
-  /**
-   * Display a listing of the resources.
-   *
-   * @return \Illuminate\Http\Response
-   */
+  protected $resource;
+
+  public function __construct(Resource $resource)
+  {
+    $this->resource = $resource;
+  }
+
   public function index(Request $request)
   {
     $tags = $request->get('tags');
 
+    $query = $this->resource->query();
+
     if ($tags) {
-      $tagArray = explode(',', $tags);
-
-      $resources = Resource::where(function ($query) use ($tagArray) {
-        foreach ($tagArray as $tag) {
-          $query->orWhere('tags', 'like', '%' . trim($tag) . '%');
-        }
-      })->paginate(15);  // 15 is the number of items per page
-    } else {
-      $resources = Resource::paginate(15);  // 15 is the number of items per page
+      $tagArray = array_map('trim', explode(',', $tags));
+      $query->where(function ($query) use ($tagArray) {
+        $query->orWhereIn('tags', $tagArray);
+      });
     }
 
-    // Loop through each resource and encode the image to Base64
-    foreach ($resources as $resource) {
-      if ($resource->image) {
-        $resource->image = base64_encode($resource->image);
-      }
-    }
+    $resources = $query->paginate(15);
 
     return response()->json($resources);
   }
 
-  /**
-   * Store a newly created resource in storage.
-   *
-   * @param  \Illuminate\Http\Request  $request
-   * @return \Illuminate\Http\Response
-   */
   public function store(Request $request)
   {
-    $resource = Resource::create($request->all());
+    $resource = $this->resource->create($request->all());
 
-    return response()->json($resource, 201);
+    return response()->json($resource, Response::HTTP_CREATED);
   }
 
-  /**
-   * Display the specified resource.
-   *
-   * @param  int  $id
-   * @return \Illuminate\Http\Response
-   */
   public function show($id)
   {
-    $resource = Resource::find($id);
-
-    // Encoding image to Base64
-    if ($resource->image) {
-      $resource->image = base64_encode($resource->image);
-    }
+    $resource = $this->resource->find($id);
 
     return response()->json($resource);
   }
 
-  /**
-   * Update the specified resource in storage.
-   *
-   * @param  \Illuminate\Http\Request  $request
-   * @param  int  $id
-   * @return \Illuminate\Http\Response
-   */
   public function update(Request $request, $id)
   {
-    $resource = Resource::find($id);
+    $resource = $this->resource->find($id);
     $resource->update($request->all());
 
     return response()->json($resource);
   }
 
-  /**
-   * Remove the specified resource from storage.
-   *
-   * @param  int  $id
-   * @return \Illuminate\Http\Response
-   */
   public function destroy($id)
   {
-    $resource = Resource::find($id);
+    $resource = $this->resource->find($id);
     $resource->delete();
 
-    return response()->json(null, 204);
+    return response()->json(null, Response::HTTP_NO_CONTENT);
   }
 }
